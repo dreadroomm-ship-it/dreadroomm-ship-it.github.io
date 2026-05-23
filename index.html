@@ -446,6 +446,21 @@
   }
   .opt-text { flex: 1; line-height: 1.35; }
 
+  /* Заголовок группы (страна) в шаге выбора курортов */
+  .opt-group-header {
+    grid-column: 1 / -1;
+    margin: 14px 0 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--turq-700, #0b8c75);
+    background: linear-gradient(90deg, var(--turq-100) 0%, transparent 100%);
+    border-radius: 8px;
+  }
+  .opt-group-header:first-child { margin-top: 0; }
+
   /* "Своё" поле */
   .other-input {
     margin-top: 8px;
@@ -991,6 +1006,185 @@
 
 <script>
 /* ============================================================================
+   Топ-курорты по странам (для условного шага после выбора стран)
+   Данные собраны по каталогам российских ТО (ANEX, Coral, TEZ, АТОР) 2025-2026.
+   ============================================================================ */
+const RESORTS_BY_COUNTRY = {
+  "Турция": [
+    { label: "Анталия", emoji: "🏖" },
+    { label: "Алания", emoji: "🌊" },
+    { label: "Белек", emoji: "⭐" },
+    { label: "Сиде", emoji: "🏛" },
+    { label: "Кемер", emoji: "🌿" },
+    { label: "Мармарис", emoji: "🎉" },
+    { label: "Бодрум", emoji: "⛵" },
+    { label: "Фетхие", emoji: "🏔" },
+    { label: "Кушадасы", emoji: "🌅" },
+    { label: "Дидим", emoji: "☀" }
+  ],
+  "Египет": [
+    { label: "Хургада", emoji: "🏖" },
+    { label: "Шарм-эль-Шейх", emoji: "🌊" },
+    { label: "Макади-Бей", emoji: "🐠" },
+    { label: "Эль-Гуна", emoji: "⛵" },
+    { label: "Марса-Алам", emoji: "🤿" },
+    { label: "Дахаб", emoji: "🌅" },
+    { label: "Сафага", emoji: "🏄" },
+    { label: "Сахл-Хашиш", emoji: "🌴" }
+  ],
+  "ОАЭ": [
+    { label: "Дубай", emoji: "🏙" },
+    { label: "Абу-Даби", emoji: "🕌" },
+    { label: "Рас-эль-Хайма", emoji: "⛰" },
+    { label: "Шарджа", emoji: "🏛" },
+    { label: "Фуджейра", emoji: "🤿" },
+    { label: "Аджман", emoji: "🏖" },
+    { label: "Пальма Джумейра", emoji: "🌴" },
+    { label: "Остров Яс", emoji: "🎢" }
+  ],
+  "Таиланд": [
+    { label: "Пхукет", emoji: "🏖" },
+    { label: "Паттайя", emoji: "🌊" },
+    { label: "Самуи", emoji: "🌴" },
+    { label: "Краби", emoji: "🏝" },
+    { label: "Ко Чанг", emoji: "🌿" },
+    { label: "Као Лак", emoji: "☀" },
+    { label: "Ко Панган", emoji: "🎉" },
+    { label: "Хуа Хин", emoji: "🏄" },
+    { label: "Ко Самет", emoji: "⛱" },
+    { label: "Острова Пхи-Пхи", emoji: "🤿" }
+  ],
+  "Мальдивы": [
+    { label: "Северный Мале атолл", emoji: "🏝" },
+    { label: "Южный Мале атолл", emoji: "🌴" },
+    { label: "Ари атолл (Северный)", emoji: "🐠" },
+    { label: "Южный Ари атолл", emoji: "🦈" },
+    { label: "Баа атолл", emoji: "🐋" },
+    { label: "Раа атолл", emoji: "🌊" },
+    { label: "Лавиани атолл", emoji: "🤿" },
+    { label: "Даалу атолл", emoji: "🏖" }
+  ],
+  "Греция": [
+    { label: "Крит", emoji: "🏖" },
+    { label: "Родос", emoji: "🌊" },
+    { label: "Корфу", emoji: "🌿" },
+    { label: "Халкидики", emoji: "🏝" },
+    { label: "Кос", emoji: "☀" },
+    { label: "Закинф", emoji: "🐢" },
+    { label: "Афины", emoji: "🏛" },
+    { label: "Пелопоннес", emoji: "⚓" },
+    { label: "Санторини", emoji: "🌋" },
+    { label: "Миконос", emoji: "💎" }
+  ],
+  "Кипр": [
+    { label: "Айя-Напа", emoji: "🏖" },
+    { label: "Протарас", emoji: "🌊" },
+    { label: "Лимассол", emoji: "🌴" },
+    { label: "Пафос", emoji: "🏛" },
+    { label: "Ларнака", emoji: "🌅" },
+    { label: "Писсури", emoji: "⛵" },
+    { label: "Полис", emoji: "🌿" },
+    { label: "Кирения (Северный Кипр)", emoji: "🏰" }
+  ],
+  "Италия": [
+    { label: "Рим", emoji: "🏛" },
+    { label: "Венеция", emoji: "🚢" },
+    { label: "Флоренция", emoji: "🎨" },
+    { label: "Тоскана", emoji: "🌿" },
+    { label: "Сицилия", emoji: "🏖" },
+    { label: "Римини", emoji: "☀" },
+    { label: "Амальфитанское побережье", emoji: "🌊" },
+    { label: "Сардиния", emoji: "🏝" },
+    { label: "Озеро Гарда", emoji: "⛵" },
+    { label: "Озеро Комо", emoji: "🏔" }
+  ],
+  "Испания": [
+    { label: "Барселона", emoji: "🏙" },
+    { label: "Тенерифе", emoji: "🌋" },
+    { label: "Майорка", emoji: "🏖" },
+    { label: "Коста-Брава", emoji: "🌊" },
+    { label: "Коста-дель-Соль", emoji: "☀" },
+    { label: "Коста-Дорада", emoji: "⛱" },
+    { label: "Гран-Канария", emoji: "🏝" },
+    { label: "Ибица", emoji: "🎉" },
+    { label: "Мадрид", emoji: "🏛" },
+    { label: "Коста-Бланка", emoji: "🌴" }
+  ],
+  "Доминикана": [
+    { label: "Пунта-Кана", emoji: "🏖" },
+    { label: "Баваро", emoji: "🌴" },
+    { label: "Уверо-Альто", emoji: "🌊" },
+    { label: "Ла-Романа", emoji: "🏝" },
+    { label: "Байяибе", emoji: "🐠" },
+    { label: "Хуан-Долио", emoji: "🌅" },
+    { label: "Бока-Чика", emoji: "⛱" },
+    { label: "Пуэрто-Плата", emoji: "🚤" },
+    { label: "Самана", emoji: "🐋" },
+    { label: "Кап-Кана", emoji: "⛳" }
+  ],
+  "Куба": [
+    { label: "Варадеро", emoji: "🏖" },
+    { label: "Гавана", emoji: "🏛" },
+    { label: "Кайо-Коко", emoji: "🌴" },
+    { label: "Ольгин", emoji: "🌊" },
+    { label: "Кайо-Гильермо", emoji: "🤿" },
+    { label: "Кайо-Санта-Мария", emoji: "🌺" },
+    { label: "Кайо-Ларго", emoji: "🐠" },
+    { label: "Санта-Лусия", emoji: "🦩" },
+    { label: "Тринидад", emoji: "🏘" },
+    { label: "Гуардалавака", emoji: "🌅" }
+  ],
+  "Шри-Ланка": [
+    { label: "Бентота", emoji: "🏖" },
+    { label: "Хиккадува", emoji: "🌊" },
+    { label: "Унаватуна", emoji: "🌴" },
+    { label: "Мирисса", emoji: "🐋" },
+    { label: "Велигама", emoji: "🏄" },
+    { label: "Тангалле", emoji: "🌿" },
+    { label: "Негомбо", emoji: "🌺" },
+    { label: "Тринкомали", emoji: "🐠" },
+    { label: "Канди", emoji: "🏯" },
+    { label: "Сигирия", emoji: "🗿" }
+  ],
+  "Вьетнам": [
+    { label: "Нячанг", emoji: "🏖" },
+    { label: "Фукуок", emoji: "🌴" },
+    { label: "Муйне", emoji: "🏄" },
+    { label: "Фантьет", emoji: "🌊" },
+    { label: "Дананг", emoji: "🏝" },
+    { label: "Хойан", emoji: "🌺" },
+    { label: "Камрань", emoji: "⛱" },
+    { label: "Вунгтау", emoji: "🐚" },
+    { label: "Далат", emoji: "🌿" },
+    { label: "Халонг", emoji: "⛵" }
+  ],
+  "Бали": [
+    { label: "Кута", emoji: "🏄" },
+    { label: "Семиньяк", emoji: "🌅" },
+    { label: "Нуса-Дуа", emoji: "🏖" },
+    { label: "Чангу", emoji: "🌊" },
+    { label: "Убуд", emoji: "🌿" },
+    { label: "Джимбаран", emoji: "🦞" },
+    { label: "Санур", emoji: "⛵" },
+    { label: "Улувату", emoji: "🪨" },
+    { label: "Легиан", emoji: "🏝" },
+    { label: "Амед", emoji: "🤿" }
+  ],
+  "Россия (юг, Кавказ)": [
+    { label: "Сочи / Адлер", emoji: "🌴" },
+    { label: "Красная Поляна", emoji: "⛷" },
+    { label: "Анапа", emoji: "🏖" },
+    { label: "Геленджик", emoji: "🌊" },
+    { label: "КавМинВоды (Кисловодск / Пятигорск)", emoji: "💧" },
+    { label: "Домбай", emoji: "🏔" },
+    { label: "Архыз", emoji: "🏕" },
+    { label: "Эльбрус (Терскол / Азау)", emoji: "🗻" },
+    { label: "Дагестан (Дербент / Каспийск)", emoji: "🌅" },
+    { label: "Туапсе / Кабардинка", emoji: "🏝" }
+  ]
+};
+
+/* ============================================================================
    ВОПРОСЫ — каждая опция: строка ИЛИ {label, emoji} ИЛИ {other:true, label, emoji}
    ============================================================================ */
 const QUESTIONS = [
@@ -1033,6 +1227,15 @@ const QUESTIONS = [
       { emoji: "🤔", label: "Ещё не определились — посоветуйте" },
       { other: true, emoji: "✏️", label: "Другая страна / регион" }
     ]
+  },
+  {
+    type: "multi",
+    dynamic: "resorts",
+    countryIdx: 1,
+    optional: true,
+    q: "Какие курорты вам интересны?",
+    hint: "Выберите популярные курорты по странам выше — или впишите свой в самом низу. Можно выбрать несколько.",
+    options: [] // будет вычислено динамически из RESORTS_BY_COUNTRY на основе выбора стран
   },
   {
     type: "daterange",
@@ -1181,7 +1384,7 @@ const QUESTIONS = [
     hint: "Пришлём подборку на этот адрес",
     placeholder: "you@example.com",
     autocomplete: "email",
-    condition: { idx: 14, equals: "Email" }
+    condition: { idx: 15, equals: "Email" }
   }
 ];
 
@@ -1232,11 +1435,35 @@ function cancelAutoAdvance() {
    ============================================================================ */
 function shouldSkip(idx) {
   const q = QUESTIONS[idx];
-  if (!q || !q.condition) return false;
+  if (!q) return false;
+  // Динамический шаг "курорты": показываем только если выбрана хотя бы одна страна,
+  // для которой у нас есть список курортов
+  if (q.dynamic === "resorts") {
+    const dep = state[q.countryIdx];
+    const countries = (dep && Array.isArray(dep.value)) ? dep.value : [];
+    return !countries.some(c => RESORTS_BY_COUNTRY[c]);
+  }
+  if (!q.condition) return false;
   const dep = state[q.condition.idx];
   if (!dep) return false;
   if (q.condition.equals !== undefined) return dep.value !== q.condition.equals;
   return false;
+}
+
+/* Вычисляет options для динамического шага "курорты" — с группировкой по странам
+   и финальной опцией "вписать свой курорт" */
+function buildResortOptions(countries) {
+  const opts = [];
+  countries.forEach(c => {
+    const list = RESORTS_BY_COUNTRY[c];
+    if (!list) return;
+    opts.push({ separator: true, label: c });
+    list.forEach(r => opts.push({ label: r.label, emoji: r.emoji, group: c }));
+  });
+  if (opts.length) {
+    opts.push({ other: true, emoji: "✏️", label: "Свой курорт (вписать)" });
+  }
+  return opts;
 }
 function getNextActiveStep(from) {
   let n = from + 1;
@@ -1296,10 +1523,31 @@ function renderQuestion(qIdx) {
 
   if (q.type === "single" || q.type === "multi") {
     const isMulti = q.type === "multi";
-    const opts = document.createElement("div");
-    opts.className = "options-big" + (q.options.length > 6 || isMulti ? " list" : "");
 
-    q.options.forEach((opt) => {
+    // Динамические опции — вычисляются на момент рендера (например, курорты по выбранным странам)
+    let renderOptions = q.options;
+    if (q.dynamic === "resorts") {
+      const dep = state[q.countryIdx];
+      const countries = (dep && Array.isArray(dep.value)) ? dep.value : [];
+      renderOptions = buildResortOptions(countries);
+      // Очистка состояния от устаревших значений (если страны менялись)
+      const validLabels = new Set(renderOptions.filter(o => !o.separator).map(o => o.label));
+      state[qIdx].value = state[qIdx].value.filter(v => validLabels.has(v));
+    }
+
+    const opts = document.createElement("div");
+    opts.className = "options-big" + (renderOptions.length > 6 || isMulti ? " list" : "");
+
+    renderOptions.forEach((opt) => {
+      // Заголовок группы (страна) — некликабельный
+      if (opt && opt.separator) {
+        const sep = document.createElement("div");
+        sep.className = "opt-group-header";
+        sep.textContent = opt.label;
+        opts.appendChild(sep);
+        return;
+      }
+
       const info = getOptInfo(opt);
 
       const optEl = document.createElement("button");
@@ -1378,12 +1626,12 @@ function renderQuestion(qIdx) {
     card.appendChild(opts);
 
     // Поле "своё"
-    if (q.options.some(o => typeof o === "object" && o.other)) {
+    if (renderOptions.some(o => typeof o === "object" && o.other)) {
       const otherWrap = document.createElement("div");
       otherWrap.className = "other-input";
       const isOpen = isMulti
-        ? state[qIdx].value.some(v => q.options.find(o => typeof o === "object" && o.other && o.label === v))
-        : !!q.options.find(o => typeof o === "object" && o.other && o.label === state[qIdx].value);
+        ? state[qIdx].value.some(v => renderOptions.find(o => typeof o === "object" && o.other && o.label === v))
+        : !!renderOptions.find(o => typeof o === "object" && o.other && o.label === state[qIdx].value);
       if (isOpen) otherWrap.classList.add("open");
 
       const inp = document.createElement("input");
